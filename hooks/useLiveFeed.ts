@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Comlink from 'comlink'
 
 import { OrderData, ProductType } from '../services/types'
@@ -8,12 +8,14 @@ export type LiveFeedHandler = (data: OrderData) => void
 export type FeedRef = OrderFeed | Comlink.Remote<OrderFeed>
 
 export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
+  const [productType, setProductType] = useState(ProductType.PI_XBTUSD)
   const feedRef = useRef<FeedRef>(
     new OrderFeed(process.env.NEXT_PUBLIC_BOOK_WS_URL!)
   )
   useEffect(() => {
     const worker = new Worker(new URL('../workers/ws', import.meta.url))
     feedRef.current = Comlink.wrap(worker) || feedRef.current
+    feedRef.current.connect()
 
     return () => {
       feedRef.current.close()
@@ -32,6 +34,7 @@ export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
           handleLiveFeed(msg)
         })
       )
+      setProductType(type)
     },
     [handleLiveFeed]
   )
@@ -39,6 +42,7 @@ export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
   return {
     close,
     subscribe,
+    productType,
   }
 }
 

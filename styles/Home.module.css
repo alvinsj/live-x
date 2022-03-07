@@ -1,116 +1,108 @@
-.container {
-  padding: 0 2rem;
+.orders {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'title title'
+    'bids asks';
 }
 
-.main {
-  min-height: 100vh;
-  padding: 4rem 0;
-  flex: 1;
+.bids {
+  grid-area: bids;
+  direction: rtl;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.bids .order_price {
+  color: var(--buy00);
+}
+
+.asks {
+  grid-area: asks;
+  direction: ltr;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.asks .order_price {
+  color: var(--sell00);
+}
+
+.order {
+  text-align: right;
+}
+
+.header {
+  grid-area: title;
+  position: relative;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+}
+
+.header_h1 {
+  font-size: 20px;
+
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 10px;
+}
+
+.header_spread {
+  flex: 1;
+  text-align: center;
+  margin: 10px;
 }
 
 .footer {
+  padding: 10px;
   display: flex;
-  flex: 1;
-  padding: 2rem 0;
-  border-top: 1px solid #eaeaea;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  position: sticky;
 }
 
-.footer a {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-grow: 1;
+.footer_button {
 }
 
-.title a {
-  color: #0070f3;
-  text-decoration: none;
-}
-
-.title a:hover,
-.title a:focus,
-.title a:active {
-  text-decoration: underline;
-}
-
-.title {
-  margin: 0;
-  line-height: 1.15;
-  font-size: 4rem;
-}
-
-.title,
-.description {
-  text-align: center;
-}
-
-.description {
-  margin: 4rem 0;
-  line-height: 1.5;
-  font-size: 1.5rem;
-}
-
-.code {
-  background: #fafafa;
-  border-radius: 5px;
-  padding: 0.75rem;
-  font-size: 1.1rem;
-  font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
-    Bitstream Vera Sans Mono, Courier New, monospace;
-}
-
-.grid {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  max-width: 800px;
-}
-
-.card {
-  margin: 1rem;
-  padding: 1.5rem;
-  text-align: left;
-  color: inherit;
-  text-decoration: none;
-  border: 1px solid #eaeaea;
-  border-radius: 10px;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  max-width: 300px;
-}
-
-.card:hover,
-.card:focus,
-.card:active {
-  color: #0070f3;
-  border-color: #0070f3;
-}
-
-.card h2 {
-  margin: 0 0 1rem 0;
-  font-size: 1.5rem;
-}
-
-.card p {
-  margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.5;
-}
-
-.logo {
-  height: 1em;
-  margin-left: 0.5rem;
+.spread {
+  grid-area: spread;
+  display: none;
 }
 
 @media (max-width: 600px) {
-  .grid {
-    width: 100%;
-    flex-direction: column;
+  .orders {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: auto;
+    grid-template-areas:
+      'title'
+      'asks'
+      'spread'
+      'bids';
+  }
+  .bids {
+    grid-area: bids;
+    direction: ltr;
+  }
+
+  .bids thead {
+    display: none;
+  }
+
+  .title_h1 {
+    position: unset;
+  }
+
+  .title_spread {
+    display: none;
+  }
+
+  .spread {
+    grid-area: spread;
+    display: block;
+    text-align: center;
   }
 }

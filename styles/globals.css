@@ -1,5 +1,18 @@
+:root {
+  --neutral00: black;
+  --primary00: white;
+  --buy00: green;
+  --sell00: red;
+
+  --fontSize00: 14px;
+}
+
 html,
 body {
+  background-color: var(--neutral00);
+  color: var(--primary00);
+  font-size: var(--fontSize00);
+
   padding: 0;
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
