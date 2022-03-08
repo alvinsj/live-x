@@ -49,7 +49,7 @@ export default class OrderFeed {
     }
   }
 
-  connect(): Promise<void> {
+  private connect(): Promise<void> {
     // guard if already connected
     if (this.isConnected()) return Promise.resolve()
 
@@ -122,6 +122,7 @@ export default class OrderFeed {
   ): Promise<void> {
     // connect if not connected
     if (!this.isConnected()) await this.connect()
+
     if (typeof this.subscription !== 'undefined') {
       await this.unsubscribe(this.subscription)
       this.subscription = undefined

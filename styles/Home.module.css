@@ -1,40 +1,3 @@
-.orders {
-  display: grid;
-  grid-template-rows: auto;
-  grid-template-columns: 1fr 1fr;
-  grid-template-areas:
-    'title title'
-    'bids asks';
-}
-
-.bids {
-  grid-area: bids;
-  direction: rtl;
-  table-layout: fixed;
-  width: 100%;
-  height: 0;
-}
-
-.bids .order_price {
-  color: var(--buy00);
-}
-
-.asks {
-  grid-area: asks;
-  direction: ltr;
-  table-layout: fixed;
-  width: 100%;
-  height: 0;
-}
-
-.asks .order_price {
-  color: var(--sell00);
-}
-
-.order {
-  text-align: right;
-}
-
 .header {
   grid-area: title;
   position: relative;
@@ -64,45 +27,8 @@
   position: sticky;
 }
 
-.footer_button {
-}
-
-.spread {
-  grid-area: spread;
-  display: none;
-}
-
 @media (max-width: 600px) {
-  .orders {
-    display: grid;
-    grid-template-rows: auto;
-    grid-template-columns: auto;
-    grid-template-areas:
-      'title'
-      'asks'
-      'spread'
-      'bids';
-  }
-  .bids {
-    grid-area: bids;
-    direction: ltr;
-  }
-
-  .bids thead {
-    display: none;
-  }
-
-  .title_h1 {
-    position: unset;
-  }
-
-  .title_spread {
-    display: none;
-  }
-
-  .spread {
-    grid-area: spread;
-    display: block;
-    text-align: center;
+  .header_h1 {
+    position: sticky;
   }
 }

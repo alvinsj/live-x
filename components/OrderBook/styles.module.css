@@ -1,0 +1,72 @@
+.orders {
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'spread spread'
+    'bids asks';
+}
+
+.bids {
+  grid-area: bids;
+  direction: rtl;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.bids .order_price {
+  color: var(--buy00);
+}
+
+.bids td,
+.asks td {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.asks {
+  grid-area: asks;
+  direction: ltr;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.asks .order_price {
+  color: var(--sell00);
+}
+
+.order {
+  text-align: right;
+}
+
+.spread {
+  grid-area: spread;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .orders {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: auto;
+    grid-template-areas:
+      'title'
+      'asks'
+      'spread'
+      'bids';
+  }
+  .bids {
+    grid-area: bids;
+    direction: ltr;
+  }
+
+  .bids thead {
+    display: none;
+  }
+
+  .spread {
+    grid-area: spread;
+    display: block;
+  }
+}
