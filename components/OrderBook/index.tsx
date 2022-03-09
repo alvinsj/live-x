@@ -69,7 +69,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   return (
     <section className={styles.orders}>
       <p className={styles.spread}>{spreadText}</p>
-      <table className={styles.bids}>
+      <table className={styles.bids} cellSpacing="0" cellPadding="0">
         <thead>
           <tr>
             <th>Price</th>
@@ -79,7 +79,15 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
         </thead>
         <tbody>
           {limitedRows(state.bids, ([price, size, total], index) => (
-            <tr key={`row-${index}`} className={styles.order}>
+            <tr
+              key={`row-${index}`}
+              className={styles.order}
+              style={{
+                background: `linear-gradient(to left, darkcyan ${
+                  (total / state.highestTotal) * 100
+                }%, transparent ${(total / state.highestTotal) * 100}%)`,
+              }}
+            >
               <td className={styles.order_price}>{n(price, true)}</td>
               <td className={styles.order_size}>{n(size)}</td>
               <td className={styles.order_total}>{n(total)}</td>
@@ -88,7 +96,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
         </tbody>
       </table>
 
-      <table className={styles.asks}>
+      <table className={styles.asks} cellSpacing="0" cellPadding="0">
         <thead>
           <tr>
             <th>Price</th>
@@ -98,7 +106,15 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
         </thead>
         <tbody>
           {limitedRows(state.asks, ([price, size, total], index) => (
-            <tr key={`row-${index}`} className={styles.order}>
+            <tr
+              key={`row-${index}`}
+              className={styles.order}
+              style={{
+                background: `linear-gradient(to right, darkred ${
+                  (total / state.highestTotal) * 100
+                }%, transparent ${(total / state.highestTotal) * 100}%)`,
+              }}
+            >
               <td className={styles.order_price}>{n(price, true)}</td>
               <td className={styles.order_size}>{n(size)}</td>
               <td className={styles.order_total}>{n(total)}</td>

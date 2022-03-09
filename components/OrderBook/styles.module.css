@@ -22,6 +22,8 @@
 .bids td,
 .asks td {
   font-family: 'Courier New', Courier, monospace;
+  border: none;
+  line-height: 1.5em;
 }
 
 .asks {

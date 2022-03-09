@@ -1,13 +1,14 @@
 import { Reducer } from 'react'
 
 import { Snapshot, Delta } from '../../services/types'
-import mapTotal, { SortOrder } from '../../utils/mapTotal'
+import mapTotal from '../../utils/mapTotal'
 
 import { Order, OrderWithTotal } from './types'
 
 export type OrderReduceState = {
   bids: OrderWithTotal[]
   asks: OrderWithTotal[]
+  highestTotal: number
 }
 
 export enum OrderReduceActionType {
@@ -23,6 +24,7 @@ export type OrderReduceAction = {
 export const initialState = {
   bids: [],
   asks: [],
+  highestTotal: 0,
 }
 
 const replaceWithDelta = (acc: Order[], [price, deltaSize]: Order): Order[] => {
@@ -42,23 +44,41 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
   const { payload, type } = action
 
   switch (type) {
-    case OrderReduceActionType.snapshot:
+    case OrderReduceActionType.snapshot: {
+      const { bids, asks } = payload
+      const newBids = mapTotal(bids)
+      const newAsks = mapTotal(asks)
+      const highestTotal = Math.max(
+        newBids[newBids.length - 1][2],
+        newAsks[newAsks.length - 1][2]
+      )
+
       return {
-        bids: mapTotal(payload.bids, SortOrder.Descending),
-        asks: mapTotal(payload.asks),
+        bids: newBids,
+        asks: newAsks,
+        highestTotal,
       }
+    }
     case OrderReduceActionType.update: {
-      const bidsWithDeltas: Order[] = payload.bids.reduce(
+      const { bids, asks } = payload
+      const bidsWithDeltas: Order[] = bids.reduce(
         replaceWithDelta,
         state.bids as any
       )
-      const asksWithDeltas: Order[] = payload.asks.reduce(
+      const asksWithDeltas: Order[] = asks.reduce(
         replaceWithDelta,
         state.asks as any
       )
+      const newBids = mapTotal(bidsWithDeltas)
+      const newAsks = mapTotal(asksWithDeltas)
+      const highestTotal = Math.max(
+        newBids[newBids.length - 1][2],
+        newAsks[newAsks.length - 1][2]
+      )
       return {
-        bids: mapTotal(bidsWithDeltas, SortOrder.Descending),
-        asks: mapTotal(asksWithDeltas),
+        bids: newBids,
+        asks: newAsks,
+        highestTotal,
       }
     }
     default:

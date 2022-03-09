@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import { useCallback, useRef, useState, useMemo } from 'react'
 import * as Comlink from 'comlink'
 
 import { OrderData, ProductType } from '../services/types'
