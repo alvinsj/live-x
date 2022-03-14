@@ -1,4 +1,11 @@
-import { FC, useCallback, useEffect, useLayoutEffect, useReducer } from 'react'
+import {
+  FC,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useState,
+} from 'react'
 import dynamic from 'next/dynamic'
 
 import styles from './styles.module.css'
@@ -55,6 +62,7 @@ const limitedRows = (
 
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
+  const [isInactive, setIsInactive] = useState(false)
 
   const handleLiveFeed = useCallback((data: OrderData) => {
     const msg = mapMessageToOrderAction(data)
@@ -76,18 +84,20 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   }, [])
 
   useLayoutEffect(() => {
-    const onFocus = () => {
-      subscribe(productType)
+    const handleClose = () => {
+      setIsInactive(true)
+      close()
     }
-    window.addEventListener('blur', close)
-    window.addEventListener('focus', onFocus)
-
+    window.addEventListener('blur', handleClose)
     return () => {
-      window.removeEventListener('blur', close)
-      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('blur', handleClose)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productType])
+  })
+
+  const handleReconnect = useCallback(async () => {
+    await subscribe(productType)
+    setIsInactive(false)
+  }, [productType, subscribe])
 
   const spreadAmount =
       state.bids.length > 0 && state.asks.length > 0
@@ -101,6 +111,11 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
 
   return (
     <section className={styles.orders}>
+      {isInactive && (
+        <div className={styles.orders_overlay} onClick={handleReconnect}>
+          Updates were stopped due to inactivity. Click to reconnect.
+        </div>
+      )}
       <p className={styles.spread}>
         Spread: <span className={styles.spread_number}>{spreadNumbers}</span>
       </p>

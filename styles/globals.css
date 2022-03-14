@@ -12,6 +12,8 @@
   --fontSize00: 14px;
   --fontSize01: 20px;
   --fontFamilyNumber: 'Roboto Mono', monospace;
+
+  --overlay: rgba(0, 0, 0, 0.6);
 }
 
 html,
