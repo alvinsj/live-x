@@ -5,7 +5,8 @@ export const mapMessageToOrderAction = (
   message: OrderData
 ): OrderReduceAction | undefined => {
   switch (true) {
-    case 'feed' in message && message.feed === 'book_ui_1_snapshot':
+    case 'feed' in message &&
+      message.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_SNAPSHOT}`:
       return {
         type: OrderReduceActionType.snapshot,
         payload: {
@@ -14,7 +15,8 @@ export const mapMessageToOrderAction = (
         },
       } as OrderReduceAction
 
-    case 'feed' in message && message.feed === 'book_ui_1':
+    case 'feed' in message &&
+      message.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_DELTA}`:
       return {
         type: OrderReduceActionType.update,
         payload: {

@@ -7,7 +7,8 @@ import throttle from '../utils/throttle'
 import { Message, OrderData, ProductType } from './types'
 
 const filterEvents = (msg: Message) => {
-  return msg?.feed === 'book_ui_1_snapshot' || msg?.feed === 'book_ui_1'
+  return msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_SNAPSHOT}` ||
+    msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_DELTA}`
     ? msg
     : undefined
 }
