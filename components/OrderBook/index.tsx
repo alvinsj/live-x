@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useReducer } from 'react'
+import { FC, useCallback, useEffect, useLayoutEffect, useReducer } from 'react'
 import dynamic from 'next/dynamic'
 
 import styles from './styles.module.css'
@@ -74,6 +74,20 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useLayoutEffect(() => {
+    const onFocus = () => {
+      subscribe(productType)
+    }
+    window.addEventListener('blur', close)
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      window.removeEventListener('blur', close)
+      window.removeEventListener('focus', onFocus)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productType])
 
   const spreadAmount =
       state.bids.length > 0 && state.asks.length > 0
