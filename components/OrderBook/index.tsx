@@ -75,7 +75,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const { close, subscribe } = useLiveFeed(handleLiveFeed)
 
   useEffect(() => {
-    subscribe(productType)
+    subscribe(productType, 18)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType])
 
@@ -112,7 +112,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   }, [])
 
   const handleReconnect = useCallback(async () => {
-    await subscribe(productType)
+    await subscribe(productType, 18)
     setIsInactive(false)
   }, [productType, subscribe])
 

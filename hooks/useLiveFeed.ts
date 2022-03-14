@@ -25,22 +25,28 @@ export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
   }, [])
 
   const subscribe = useCallback(
-    async (type: ProductType) => {
+    async (type: ProductType, throttleMS = 1000) => {
       await feedRef.current.subscribe(
         type,
         Comlink.proxy((msg: OrderData) => {
           handleLiveFeed(msg)
-        })
+        }),
+        throttleMS
       )
       setProductType(type)
     },
     [handleLiveFeed]
   )
 
+  const isClosed = useCallback(async () => {
+    return await feedRef.current.isClosed()
+  }, [])
+
   return {
     close,
     subscribe,
     productType,
+    isClosed,
   }
 }
 

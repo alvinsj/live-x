@@ -119,7 +119,8 @@ export default class OrderFeed {
 
   async subscribe(
     productId: ProductType,
-    onFeed: (msg: OrderData) => void
+    onFeed: (msg: OrderData) => void,
+    throttleMS = 1000
   ): Promise<void> {
     // connect if not connected
     if (!this.isConnected()) await this.connect()
@@ -164,7 +165,7 @@ export default class OrderFeed {
         addAndRemoveEventListener(
           this.socket,
           'message',
-          throttle(1000, this.createMessageHandler(onFeed)),
+          throttle(throttleMS, this.createMessageHandler(onFeed)),
           () => this.subscription !== productId
         )
       }
