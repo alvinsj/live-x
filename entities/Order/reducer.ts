@@ -31,8 +31,7 @@ const replaceWithDelta = (acc: Order[], [price, deltaSize]: Order): Order[] => {
   if (index === -1) {
     return [...acc, [price, deltaSize]]
   }
-  const [, size] = acc[index]
-  acc[index] = [price, deltaSize === 0 ? 0 : size + deltaSize]
+  acc[index] = [price, deltaSize === 0 ? 0 : deltaSize]
   return acc
 }
 
