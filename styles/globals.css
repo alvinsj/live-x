@@ -1,10 +1,17 @@
 :root {
-  --neutral00: black;
-  --primary00: white;
+  --neutral00: #1d1f21;
+  --primary00: #f8f8f2;
+  --primary01: rgba(128, 128, 128);
+  --primary02: rgba(128, 128, 128, 0.5);
+  --secondary00: rgb(101, 81, 216);
   --buy00: green;
   --sell00: red;
+  --buyChart: rgba(0, 138, 138, 0.2);
+  --sellChart: rgba(139, 0, 0, 0.2);
 
   --fontSize00: 14px;
+  --fontSize01: 20px;
+  --fontFamilyNumber: 'Roboto Mono', monospace;
 }
 
 html,
@@ -22,6 +29,7 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+  font-size: var(--fontSize00);
 }
 
 * {

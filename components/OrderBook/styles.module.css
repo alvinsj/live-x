@@ -7,6 +7,23 @@
     'bids asks';
 }
 
+.asks,
+.bids {
+  display: table;
+}
+
+.orders_header,
+.order {
+  display: table-row;
+}
+
+.order_price,
+.order_size,
+.order_total,
+.orders_headerItem {
+  display: table-cell;
+}
+
 .bids {
   grid-area: bids;
   direction: rtl;
@@ -15,15 +32,31 @@
   height: 0;
 }
 
-.bids .order_price {
+.bid_price {
   color: var(--buy00);
 }
 
-.bids td,
-.asks td {
-  font-family: 'Courier New', Courier, monospace;
+.order_price,
+.order_size,
+.order_total,
+.ask_price,
+.bid_price {
+  font-family: var(--fontFamilyNumber);
   border: none;
   line-height: 1.5em;
+  text-align: right;
+  padding: 5px 50px 0px 50px;
+  box-sizing: border-box;
+}
+
+.orders_headerItem {
+  border-top: 1px solid var(--primary01);
+  color: var(--primary01);
+  border-bottom: 1px solid var(--primary02);
+  text-align: right;
+  padding: 5px 50px 5px 50px;
+  box-sizing: border-box;
+  text-transform: uppercase;
 }
 
 .asks {
@@ -34,17 +67,23 @@
   height: 0;
 }
 
-.asks .order_price {
+.ask_price {
   color: var(--sell00);
 }
 
 .order {
   text-align: right;
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
 }
 
 .spread {
   grid-area: spread;
   text-align: center;
+  color: var(--primary01);
+}
+.spread_number {
+  font-family: var(--fontFamilyNumber);
 }
 
 @media (max-width: 600px) {
@@ -63,7 +102,7 @@
     direction: ltr;
   }
 
-  .bids thead {
+  .bids .orders_header {
     display: none;
   }
 

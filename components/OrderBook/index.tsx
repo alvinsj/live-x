@@ -6,7 +6,7 @@ import useLiveFeed from '../../hooks/useLiveFeed'
 import reducer, { initialState } from '../../entities/Order/reducer'
 import { OrderData, ProductType } from '../../services/types'
 import mapMessageToOrderAction from '../../entities/Order/mapMessageToOrderAction'
-import { OrderWithTotal } from '../../entities/Order/types'
+import { Order, OrderWithTotal } from '../../entities/Order/types'
 
 const numberFormat = new Intl.NumberFormat('en-US')
 const priceFormat = new Intl.NumberFormat('en-US', {
@@ -24,6 +24,35 @@ const n = (num: number, isPrice = false) =>
 export type OrderBookProps = {
   productType: ProductType
 }
+
+export enum SortOder {
+  asc = 'asc',
+  desc = 'desc',
+}
+
+const limitedRows = (
+  items: Order[],
+  mapper: {
+    ([price, size, total]: OrderWithTotal, i: number): JSX.Element
+  },
+  order = SortOder.asc
+) => {
+  let prev = 0
+  return Array.from({ length: Math.min(20, items.length || 20) }).map(
+    (_, i) => {
+      const itemIndex = order === SortOder.asc ? i : items.length - i - 1
+
+      if (typeof items[itemIndex] !== 'undefined') {
+        const total = items[itemIndex][1] + prev
+        prev = total
+        return mapper([items[itemIndex][0], items[itemIndex][1], total], i)
+      }
+
+      return mapper([0, 0, 0], i)
+    }
+  )
+}
+
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
 
@@ -52,76 +81,68 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
         : 0,
     spreadPercentage =
       state.asks.length > 0 ? spreadAmount / state.asks[0][0] : 0,
-    spreadText = `Spread: ${spreadFormat.format(
+    spreadNumbers = `${spreadFormat.format(
       spreadAmount
     )} (${percentageFormat.format(spreadPercentage)}%)`
 
-  const limitedRows = (
-    items: OrderWithTotal[],
-    mapper: {
-      ([price, size, total]: OrderWithTotal, i: number): JSX.Element
-    }
-  ) =>
-    Array.from({ length: Math.min(20, items.length) }).map((_, i) => {
-      return typeof items[i] !== 'undefined' ? mapper(items[i], i) : false
-    })
-
   return (
     <section className={styles.orders}>
-      <p className={styles.spread}>{spreadText}</p>
-      <table className={styles.bids} cellSpacing="0" cellPadding="0">
-        <thead>
-          <tr>
-            <th>Price</th>
-            <th>Size</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {limitedRows(state.bids, ([price, size, total], index) => (
-            <tr
+      <p className={styles.spread}>
+        Spread: <span className={styles.spread_number}>{spreadNumbers}</span>
+      </p>
+      <div className={styles.bids}>
+        <header className={styles.orders_header}>
+          <span className={styles.orders_headerItem}>Price</span>
+          <span className={styles.orders_headerItem}>Size</span>
+          <span className={styles.orders_headerItem}>Total</span>
+        </header>
+        {limitedRows(
+          state.bids,
+          ([price, size, total], index) => (
+            <div
               key={`row-${index}`}
               className={styles.order}
               style={{
-                background: `linear-gradient(to left, darkcyan ${
+                background: `linear-gradient(to left, var(--buyChart) ${Math.round(
                   (total / state.highestTotal) * 100
-                }%, transparent ${(total / state.highestTotal) * 100}%)`,
+                )}%, transparent ${Math.round(
+                  (total / state.highestTotal) * 100
+                )}%)`,
               }}
             >
-              <td className={styles.order_price}>{n(price, true)}</td>
-              <td className={styles.order_size}>{n(size)}</td>
-              <td className={styles.order_total}>{n(total)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              <span className={styles.bid_price}>{n(price, true)}</span>
+              <span className={styles.order_size}>{n(size)}</span>
+              <span className={styles.order_total}>{n(total)}</span>
+            </div>
+          ),
+          SortOder.desc
+        )}
+      </div>
 
-      <table className={styles.asks} cellSpacing="0" cellPadding="0">
-        <thead>
-          <tr>
-            <th>Price</th>
-            <th>Size</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {limitedRows(state.asks, ([price, size, total], index) => (
-            <tr
-              key={`row-${index}`}
-              className={styles.order}
-              style={{
-                background: `linear-gradient(to right, darkred ${
-                  (total / state.highestTotal) * 100
-                }%, transparent ${(total / state.highestTotal) * 100}%)`,
-              }}
-            >
-              <td className={styles.order_price}>{n(price, true)}</td>
-              <td className={styles.order_size}>{n(size)}</td>
-              <td className={styles.order_total}>{n(total)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className={styles.asks}>
+        <header className={styles.orders_header}>
+          <span className={styles.orders_headerItem}>Price</span>
+          <span className={styles.orders_headerItem}>Size</span>
+          <span className={styles.orders_headerItem}>Total</span>
+        </header>
+        {limitedRows(state.asks, ([price, size, total], index) => (
+          <div
+            key={`row-${index}`}
+            className={styles.order}
+            style={{
+              background: `linear-gradient(to right, var(--sellChart) ${Math.round(
+                (total / state.highestTotal) * 100
+              )}%, transparent ${Math.round(
+                (total / state.highestTotal) * 100
+              )}%)`,
+            }}
+          >
+            <span className={styles.ask_price}>{n(price, true)}</span>
+            <span className={styles.order_size}>{n(size)}</span>
+            <span className={styles.order_total}>{n(total)}</span>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
