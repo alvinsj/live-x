@@ -63,6 +63,9 @@ const limitedRows = (
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
   const [isInactive, setIsInactive] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(
+    window?.matchMedia('(max-width: 600px)').matches
+  )
 
   const handleLiveFeed = useCallback((data: OrderData) => {
     const msg = mapMessageToOrderAction(data)
@@ -93,6 +96,20 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
       window.removeEventListener('blur', handleClose)
     }
   })
+
+  useEffect(() => {
+    const mediaQuery = window?.matchMedia('(max-width: 600px)')
+    const handleSmallScreenSchange = (e: any) => {
+      if (e.matches) {
+        setIsSmallScreen(true)
+      } else setIsSmallScreen(false)
+    }
+    mediaQuery.addEventListener('change', handleSmallScreenSchange)
+
+    return () => {
+      mediaQuery.removeEventListener('change', handleSmallScreenSchange)
+    }
+  }, [])
 
   const handleReconnect = useCallback(async () => {
     await subscribe(productType)
@@ -132,7 +149,9 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
               key={`row-${index}`}
               className={styles.order}
               style={{
-                background: `linear-gradient(to left, var(--buyChart) ${Math.round(
+                background: `linear-gradient(to ${
+                  isSmallScreen ? 'right' : 'left'
+                }, var(--buyChart) ${Math.round(
                   (total / state.highestTotal) * 100
                 )}%, transparent ${Math.round(
                   (total / state.highestTotal) * 100
@@ -154,23 +173,27 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
           <span className={styles.orders_headerItem}>Size</span>
           <span className={styles.orders_headerItem}>Total</span>
         </header>
-        {limitedRows(state.asks, ([price, size, total], index) => (
-          <div
-            key={`row-${index}`}
-            className={styles.order}
-            style={{
-              background: `linear-gradient(to right, var(--sellChart) ${Math.round(
-                (total / state.highestTotal) * 100
-              )}%, transparent ${Math.round(
-                (total / state.highestTotal) * 100
-              )}%)`,
-            }}
-          >
-            <span className={styles.ask_price}>{n(price, true)}</span>
-            <span className={styles.order_size}>{n(size)}</span>
-            <span className={styles.order_total}>{n(total)}</span>
-          </div>
-        ))}
+        {limitedRows(
+          state.asks,
+          ([price, size, total], index) => (
+            <div
+              key={`row-${index}`}
+              className={styles.order}
+              style={{
+                background: `linear-gradient(to right, var(--sellChart) ${Math.round(
+                  (total / state.highestTotal) * 100
+                )}%, transparent ${Math.round(
+                  (total / state.highestTotal) * 100
+                )}%)`,
+              }}
+            >
+              <span className={styles.ask_price}>{n(price, true)}</span>
+              <span className={styles.order_size}>{n(size)}</span>
+              <span className={styles.order_total}>{n(total)}</span>
+            </div>
+          ),
+          isSmallScreen ? SortOder.desc : SortOder.asc
+        )}
       </div>
     </section>
   )
