@@ -1,13 +1,12 @@
 import { Reducer } from 'react'
 
 import { Snapshot, Delta } from '../../services/types'
-import mapTotal from '../../utils/mapTotal'
 
-import { Order, OrderWithTotal } from './types'
+import { Order } from './types'
 
 export type OrderReduceState = {
-  bids: OrderWithTotal[]
-  asks: OrderWithTotal[]
+  bids: Order[]
+  asks: Order[]
   highestTotal: number
 }
 
@@ -46,39 +45,31 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
   switch (type) {
     case OrderReduceActionType.snapshot: {
       const { bids, asks } = payload
-      const newBids = mapTotal(bids)
-      const newAsks = mapTotal(asks)
-      const highestTotal = Math.max(
-        newBids[newBids.length - 1][2],
-        newAsks[newAsks.length - 1][2]
-      )
 
       return {
-        bids: newBids,
-        asks: newAsks,
-        highestTotal,
+        bids,
+        asks,
+        highestTotal: Math.max(
+          bids.reduce((sum, item) => sum + item[1], 0),
+          asks.reduce((sum, item) => sum + item[1], 0)
+        ),
       }
     }
     case OrderReduceActionType.update: {
       const { bids, asks } = payload
-      const bidsWithDeltas: Order[] = bids.reduce(
-        replaceWithDelta,
-        state.bids as any
-      )
-      const asksWithDeltas: Order[] = asks.reduce(
-        replaceWithDelta,
-        state.asks as any
-      )
-      const newBids = mapTotal(bidsWithDeltas)
-      const newAsks = mapTotal(asksWithDeltas)
-      const highestTotal = Math.max(
-        newBids[newBids.length - 1][2],
-        newAsks[newAsks.length - 1][2]
-      )
+      const bidsWithDeltas = bids
+        .reduce(replaceWithDelta, state.bids)
+        .filter(([, size]) => size > 0)
+      const asksWithDeltas: Order[] = asks
+        .reduce(replaceWithDelta, state.asks as Order[])
+        .filter(([, size]) => size > 0)
       return {
-        bids: newBids,
-        asks: newAsks,
-        highestTotal,
+        bids: bidsWithDeltas,
+        asks: asksWithDeltas,
+        highestTotal: Math.max(
+          bidsWithDeltas.reduce((sum, item) => sum + item[1], 0),
+          asksWithDeltas.reduce((sum, item) => sum + item[1], 0)
+        ),
       }
     }
     default:
