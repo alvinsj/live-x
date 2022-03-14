@@ -46,8 +46,8 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
       const { bids, asks } = payload
 
       return {
-        bids,
-        asks,
+        bids: bids.sort((a, b) => a[0] - b[0]),
+        asks: asks.sort((a, b) => a[0] - b[0]),
         highestTotal: Math.max(
           bids.reduce((sum, item) => sum + item[1], 0),
           asks.reduce((sum, item) => sum + item[1], 0)
@@ -59,9 +59,11 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
       const bidsWithDeltas = bids
         .reduce(replaceWithDelta, state.bids)
         .filter(([, size]) => size > 0)
+        .sort((a, b) => a[0] - b[0])
       const asksWithDeltas: Order[] = asks
         .reduce(replaceWithDelta, state.asks as Order[])
         .filter(([, size]) => size > 0)
+        .sort((a, b) => a[0] - b[0])
       return {
         bids: bidsWithDeltas,
         asks: asksWithDeltas,

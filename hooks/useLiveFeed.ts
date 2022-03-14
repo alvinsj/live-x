@@ -9,7 +9,10 @@ export type FeedRef = OrderFeed | Comlink.Remote<OrderFeed>
 
 let proxy: FeedRef
 
-export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
+export const useLiveFeed = (
+  handleLiveFeed: LiveFeedHandler,
+  handleError: (error: unknown) => void = () => undefined
+) => {
   const [productType, setProductType] = useState(ProductType.PI_XBTUSD)
   const worker = useMemo(() => {
     proxy =
@@ -21,25 +24,37 @@ export const useLiveFeed = (handleLiveFeed: LiveFeedHandler) => {
   const feedRef = useRef<FeedRef>(worker)
 
   const close = useCallback(async () => {
-    await feedRef.current.close()
-  }, [])
+    try {
+      await feedRef.current.close()
+    } catch (error) {
+      handleError(error)
+    }
+  }, [handleError])
 
   const subscribe = useCallback(
     async (type: ProductType, throttleMS = 1000) => {
-      await feedRef.current.subscribe(
-        type,
-        Comlink.proxy((msg: OrderData) => {
-          handleLiveFeed(msg)
-        }),
-        throttleMS
-      )
-      setProductType(type)
+      try {
+        await feedRef.current.subscribe(
+          type,
+          Comlink.proxy((msg: OrderData) => {
+            handleLiveFeed(msg)
+          }),
+          throttleMS
+        )
+        setProductType(type)
+      } catch (error) {
+        handleError(error)
+      }
     },
-    [handleLiveFeed]
+    [handleLiveFeed, handleError]
   )
 
   const isClosed = useCallback(async () => {
-    return await feedRef.current.isClosed()
+    try {
+      return await feedRef.current.isClosed()
+    } catch (error) {
+      handleError(error)
+    }
   }, [])
 
   return {

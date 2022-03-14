@@ -1,5 +1,5 @@
 import addEventListenerOnce, {
-  addAndRemoveEventListener,
+  addErrorListenerOnce,
 } from '../utils/addEventListenerOnce'
 import parseEvent from '../utils/parseEvent'
 import throttle from '../utils/throttle'
@@ -11,6 +11,23 @@ const filterEvents = (msg: Message) => {
     msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_DELTA}`
     ? msg
     : undefined
+}
+
+const createTimedPromise = <T>(
+  executor: (
+    resolve: (value: T | PromiseLike<T>) => void,
+    reject: (reason?: any) => void
+  ) => void
+): Promise<T> => {
+  return Promise.race([
+    new Promise<T>(executor),
+    // // Time out request
+    // new Promise<T>((resolve, reject) => {
+    //   setTimeout(() => {
+    //     reject('request timed out')
+    //   }, 2000)
+    // }),
+  ])
 }
 
 export default class OrderFeed {
@@ -45,33 +62,38 @@ export default class OrderFeed {
   createMessageHandler(onFeed: (msg: OrderData) => void) {
     return (event: any) => {
       const msg = filterEvents(parseEvent(event))
+
       if (msg && 'product_id' in msg && msg.product_id === this.subscription)
         onFeed(msg as OrderData)
     }
   }
 
-  private connect(): Promise<void> {
+  connect(): Promise<void> {
     // guard if already connected
     if (this.isConnected()) return Promise.resolve()
 
-    return new Promise<void>((resolve, reject) => {
+    return createTimedPromise<void>((resolve, reject) => {
       const opened = () => {
         resolve()
       }
-      const error = (error: any) => {
-        reject(error)
-      }
 
-      this.socket = new WebSocket(this.url)
-      addEventListenerOnce(this.socket, 'open', opened)
-      addEventListenerOnce(this.socket, 'error', error)
+      try {
+        this.socket = new WebSocket(this.url)
+        addEventListenerOnce(this.socket, 'open', opened)
+        addErrorListenerOnce(this.socket, 'error', (error: any) => {
+          reject(error.message)
+          this.socket?.removeEventListener('open', opened)
+        })
+      } catch (error) {
+        reject(error.message)
+      }
     })
   }
 
   unsubscribe(productId: ProductType): Promise<void> {
     if (!this.isConnected()) return Promise.resolve()
 
-    return new Promise<void>((resolve, reject) => {
+    return createTimedPromise<void>((resolve, reject) => {
       if (!this.socket) {
         reject(new Error('Socket is not open'))
         return
@@ -105,14 +127,10 @@ export default class OrderFeed {
       }
 
       // add event listeners
-      addAndRemoveEventListener(
-        this.socket,
-        'message',
-        unsubscribed,
-        shouldRemove
-      )
-      addEventListenerOnce(this.socket, 'error', (error: any) => {
-        reject(error)
+      addEventListenerOnce(this.socket, 'message', unsubscribed, shouldRemove)
+      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+        reject(error.message)
+        this.socket?.removeEventListener('message', unsubscribed)
       })
     })
   }
@@ -130,9 +148,9 @@ export default class OrderFeed {
       this.subscription = undefined
     }
 
-    return new Promise<void>((resolve, reject) => {
+    return createTimedPromise<void>((resolve, reject) => {
       if (!this.socket) {
-        reject(new Error('Socket is not open'))
+        reject('Socket is not open')
         return
       }
 
@@ -161,25 +179,33 @@ export default class OrderFeed {
       const done = () => {
         if (!this.socket) return
 
+        const throttled = throttle(
+          throttleMS,
+          this.createMessageHandler(onFeed)
+        )
         // throttle to avoid flooding
-        addAndRemoveEventListener(
+        addEventListenerOnce(
           this.socket,
           'message',
-          throttle(throttleMS, this.createMessageHandler(onFeed)),
+          throttled,
           () => this.subscription !== productId
         )
+        addErrorListenerOnce(this.socket, 'error', (error: any) => {
+          this.socket?.removeEventListener('message', throttled)
+        })
       }
 
       // add event listeners
-      addAndRemoveEventListener(
+      addEventListenerOnce(
         this.socket,
         'message',
         subscribed,
         () => this.subscription === productId,
         done
       )
-      addEventListenerOnce(this.socket, 'error', (error: any) => {
-        reject(error)
+      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+        reject(error.message)
+        this.socket?.removeEventListener('message', subscribed)
       })
     })
   }
@@ -188,19 +214,20 @@ export default class OrderFeed {
     if (this.isClosed()) return Promise.resolve()
     if (this.socket) this.socket.close()
 
-    return new Promise<void>((resolve, reject) => {
+    return createTimedPromise((resolve, reject) => {
       const closed = () => {
         this.subscription = undefined
         resolve()
       }
 
       if (!this.socket) {
-        reject(new Error('Socket is not open'))
+        reject('Socket is not open')
         return
       }
       addEventListenerOnce(this.socket, 'close', closed)
-      addEventListenerOnce(this.socket, 'error', (error: any) => {
-        reject(error)
+      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+        reject(error.message)
+        this.socket?.removeEventListener('close', closed)
       })
     })
   }

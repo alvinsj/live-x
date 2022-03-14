@@ -1,10 +1,10 @@
-export const addAndRemoveEventListener = (
+export const addEventListenerOnce = (
   eventTarget: EventTarget,
   eventName: string,
   fn: EventListener,
   shouldRemove?: (...args: any[]) => boolean,
   done?: (...args: any[]) => void
-) => {
+): void => {
   const listener: EventListener = (...args) => {
     fn(...args)
 
@@ -17,10 +17,10 @@ export const addAndRemoveEventListener = (
   if (eventTarget) eventTarget.addEventListener(eventName, listener)
 }
 
-const addEventListenerOnce = (
+export const addErrorListenerOnce = (
   eventTarget: EventTarget,
   eventName: string,
-  fn: EventListener,
-  done?: (...args: any[]) => void
-) => addAndRemoveEventListener(eventTarget, eventName, fn, undefined, done)
+  fn: EventListener
+): void => addEventListenerOnce(eventTarget, eventName, fn, () => true)
+
 export default addEventListenerOnce

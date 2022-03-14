@@ -23,7 +23,8 @@ const percentageFormat = new Intl.NumberFormat('en-US', {
   minimumFractionDigits: 1,
 })
 const spreadFormat = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 1,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 })
 const n = (num: number, isPrice = false) =>
   isPrice ? priceFormat.format(num) : numberFormat.format(num)
@@ -62,7 +63,7 @@ const limitedRows = (
 
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
-  const [isInactive, setIsInactive] = useState(false)
+  const [isInactive, setIsInactive] = useState<string | boolean>(false)
   const [isSmallScreen, setIsSmallScreen] = useState(
     window?.matchMedia('(max-width: 600px)').matches
   )
@@ -72,10 +73,15 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
     if (typeof msg !== 'undefined') dispatch(msg)
   }, [])
 
-  const { close, subscribe } = useLiveFeed(handleLiveFeed)
+  const handleFeedError = useCallback(() => {
+    setIsInactive('Error connecting to feed. Click to retry.')
+  }, [])
+
+  const { close, subscribe } = useLiveFeed(handleLiveFeed, handleFeedError)
 
   useEffect(() => {
     subscribe(productType, 18)
+    setIsInactive(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType])
 
@@ -88,7 +94,9 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
 
   useLayoutEffect(() => {
     const handleClose = () => {
-      setIsInactive(true)
+      setIsInactive(
+        'Updates were stopped due to inactivity. Click to reconnect.'
+      )
       close()
     }
     window.addEventListener('blur', handleClose)
@@ -130,7 +138,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
     <section className={styles.orders}>
       {isInactive && (
         <div className={styles.orders_overlay} onClick={handleReconnect}>
-          Updates were stopped due to inactivity. Click to reconnect.
+          {isInactive}
         </div>
       )}
       <p className={styles.spread}>
