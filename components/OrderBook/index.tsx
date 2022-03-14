@@ -77,7 +77,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
 
   const spreadAmount =
       state.bids.length > 0 && state.asks.length > 0
-        ? Math.abs(state.bids[0][0] - state.asks[0][0])
+        ? Math.abs(state.bids[state.bids.length - 1][0] - state.asks[0][0])
         : 0,
     spreadPercentage =
       state.asks.length > 0 ? spreadAmount / state.asks[0][0] : 0,
