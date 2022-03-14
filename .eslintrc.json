@@ -14,6 +14,8 @@
   "rules": {
     "no-unused-vars": "off",
     "no-console": "error",
-    "@typescript-eslint/no-unused-vars": "error"
+    "@typescript-eslint/no-unused-vars": "error",
+    "semi": [2, "never"],
+    "@typescript-eslint/no-extra-semi": "off"
   }
 }
