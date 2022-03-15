@@ -55,7 +55,7 @@ export const useLiveFeed = (
     } catch (error) {
       handleError(error)
     }
-  }, [])
+  }, [handleError])
 
   return {
     close,

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// FIXME fix types
+
 const throttle = (ms: number, fn: (...args: any[]) => any) => {
   let lastCall = 0
   return function (...args: any) {

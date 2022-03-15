@@ -6,28 +6,14 @@ import throttle from '../utils/throttle'
 
 import { Message, OrderData, ProductType } from './types'
 
+export type WebSocketEvent = MessageEvent
+export type WebSocketError = Error
+
 const filterEvents = (msg: Message) => {
   return msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_SNAPSHOT}` ||
     msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_DELTA}`
     ? msg
     : undefined
-}
-
-const createTimedPromise = <T>(
-  executor: (
-    resolve: (value: T | PromiseLike<T>) => void,
-    reject: (reason?: any) => void
-  ) => void
-): Promise<T> => {
-  return Promise.race([
-    new Promise<T>(executor),
-    // // Time out request
-    // new Promise<T>((resolve, reject) => {
-    //   setTimeout(() => {
-    //     reject('request timed out')
-    //   }, 2000)
-    // }),
-  ])
 }
 
 export default class OrderFeed {
@@ -60,7 +46,7 @@ export default class OrderFeed {
   }
 
   createMessageHandler(onFeed: (msg: OrderData) => void) {
-    return (event: any) => {
+    return (event: MessageEvent) => {
       const msg = filterEvents(parseEvent(event))
 
       if (msg && 'product_id' in msg && msg.product_id === this.subscription)
@@ -72,7 +58,7 @@ export default class OrderFeed {
     // guard if already connected
     if (this.isConnected()) return Promise.resolve()
 
-    return createTimedPromise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const opened = () => {
         resolve()
       }
@@ -80,12 +66,12 @@ export default class OrderFeed {
       try {
         this.socket = new WebSocket(this.url)
         addEventListenerOnce(this.socket, 'open', opened)
-        addErrorListenerOnce(this.socket, 'error', (error: any) => {
+        addErrorListenerOnce(this.socket, 'error', (error: WebSocketError) => {
           reject(error.message)
           this.socket?.removeEventListener('open', opened)
         })
       } catch (error) {
-        reject(error.message)
+        reject('Could not connect to websocket')
       }
     })
   }
@@ -93,7 +79,7 @@ export default class OrderFeed {
   unsubscribe(productId: ProductType): Promise<void> {
     if (!this.isConnected()) return Promise.resolve()
 
-    return createTimedPromise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.socket) {
         reject(new Error('Socket is not open'))
         return
@@ -109,7 +95,7 @@ export default class OrderFeed {
 
       let isUnsubscribed = false
       // socket listeners
-      const unsubscribed = (event: any) => {
+      const unsubscribed = (event: WebSocketEvent) => {
         const msg = parseEvent(event)
 
         // confirmation
@@ -128,7 +114,7 @@ export default class OrderFeed {
 
       // add event listeners
       addEventListenerOnce(this.socket, 'message', unsubscribed, shouldRemove)
-      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+      addErrorListenerOnce(this.socket, 'error', (error: WebSocketError) => {
         reject(error.message)
         this.socket?.removeEventListener('message', unsubscribed)
       })
@@ -148,7 +134,7 @@ export default class OrderFeed {
       this.subscription = undefined
     }
 
-    return createTimedPromise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       if (!this.socket) {
         reject('Socket is not open')
         return
@@ -163,7 +149,7 @@ export default class OrderFeed {
       )
 
       // socket listeners
-      const subscribed = (event: any) => {
+      const subscribed = (event: WebSocketEvent) => {
         const msg = parseEvent(event)
 
         // confirmation of subscription
@@ -203,7 +189,7 @@ export default class OrderFeed {
         () => this.subscription === productId,
         done
       )
-      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+      addErrorListenerOnce(this.socket, 'error', (error: WebSocketError) => {
         reject(error.message)
         this.socket?.removeEventListener('message', subscribed)
       })
@@ -214,7 +200,7 @@ export default class OrderFeed {
     if (this.isClosed()) return Promise.resolve()
     if (this.socket) this.socket.close()
 
-    return createTimedPromise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const closed = () => {
         this.subscription = undefined
         resolve()
@@ -225,7 +211,7 @@ export default class OrderFeed {
         return
       }
       addEventListenerOnce(this.socket, 'close', closed)
-      addErrorListenerOnce(this.socket, 'error', (error: any) => {
+      addErrorListenerOnce(this.socket, 'error', (error: WebSocketError) => {
         reject(error.message)
         this.socket?.removeEventListener('close', closed)
       })
