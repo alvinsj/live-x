@@ -6,6 +6,7 @@ import {
   useReducer,
   useState,
   useMemo,
+  useRef,
 } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -16,6 +17,7 @@ import { OrderData, ProductType } from '../../services/types'
 import mapMessageToOrderAction from '../../entities/Order/mapMessageToOrderAction'
 import { Order, OrderWithTotal } from '../../entities/Order/types'
 import useFPS from '../../hooks/useFPS'
+import useAnimationFrame from '../../hooks/useAnimationFrame'
 
 const numberFormat = new Intl.NumberFormat('en-US')
 const priceFormat = new Intl.NumberFormat('en-US', {
@@ -78,12 +80,18 @@ const mapOrder = (
   })
 
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [reducerState, dispatch] = useReducer(reducer, initialState)
   const [isInactive, setIsInactive] = useState<string | boolean>(false)
   const [isSmallScreen, setIsSmallScreen] = useState(
     window?.matchMedia('(max-width: 600px)').matches
   )
-  const { ms: throttleMS } = useFPS(60)
+  const [state, setState] = useState(reducerState)
+
+  const ref = useRef(reducerState)
+  ref.current = reducerState
+  useAnimationFrame(() => {
+    setState(ref.current)
+  })
 
   const handleLiveFeed = useCallback((data: OrderData) => {
     const msg = mapMessageToOrderAction(data)
@@ -97,7 +105,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const { close, subscribe } = useLiveFeed(handleLiveFeed, handleFeedError)
 
   useEffect(() => {
-    subscribe(productType, throttleMS)
+    subscribe(productType)
     setIsInactive(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType])
@@ -137,20 +145,24 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   }, [])
 
   const handleReconnect = useCallback(async () => {
-    await subscribe(productType, throttleMS)
+    await subscribe(productType)
     setIsInactive(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType, subscribe])
 
-  const spreadAmount =
-      state.bids.length > 0 && state.asks.length > 0
-        ? Math.abs(state.bids[state.bids.length - 1][0] - state.asks[0][0])
-        : 0,
-    spreadPercentage =
-      state.asks.length > 0 ? spreadAmount / state.asks[0][0] : 0,
-    spreadNumbers = `${spreadFormat.format(
-      spreadAmount
-    )} (${percentageFormat.format(spreadPercentage)}%)`
+  const { spreadNumbers } = useMemo(() => {
+    const spreadAmount =
+        state.bids.length > 0 && state.asks.length > 0
+          ? Math.abs(state.bids[state.bids.length - 1][0] - state.asks[0][0])
+          : 0,
+      spreadPercentage =
+        state.asks.length > 0 ? spreadAmount / state.asks[0][0] : 0,
+      spreadNumbers = `${spreadFormat.format(
+        spreadAmount
+      )} (${percentageFormat.format(spreadPercentage)}%)`
+
+    return { spreadAmount, spreadPercentage, spreadNumbers }
+  }, [state.bids, state.asks])
 
   const [bids, bidsTotal] = useMemo(
     () => limitedRows(state.bids, SortOder.desc),

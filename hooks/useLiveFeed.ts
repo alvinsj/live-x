@@ -32,7 +32,7 @@ export const useLiveFeed = (
   }, [handleError])
 
   const subscribe = useCallback(
-    async (type: ProductType, throttleMS = 1000) => {
+    async (type: ProductType, throttleMS = 8) => {
       try {
         await feedRef.current.subscribe(
           type,

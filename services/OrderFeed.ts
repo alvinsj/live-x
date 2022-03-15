@@ -190,7 +190,7 @@ export default class OrderFeed {
           throttled,
           () => this.subscription !== productId
         )
-        addErrorListenerOnce(this.socket, 'error', (error: any) => {
+        addErrorListenerOnce(this.socket, 'error', () => {
           this.socket?.removeEventListener('message', throttled)
         })
       }
