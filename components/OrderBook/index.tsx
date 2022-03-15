@@ -10,14 +10,20 @@ import {
 } from 'react'
 import dynamic from 'next/dynamic'
 
-import styles from './styles.module.css'
-import useLiveFeed from '../../hooks/useLiveFeed'
-import reducer, { initialState } from '../../entities/Order/reducer'
 import { OrderData, ProductType } from '../../services/types'
+
+import reducer, { initialState } from '../../entities/Order/reducer'
 import mapMessageToOrderAction from '../../entities/Order/mapMessageToOrderAction'
-import { Order, OrderWithTotal } from '../../entities/Order/types'
-import useFPS from '../../hooks/useFPS'
+
+import useLiveFeed from '../../hooks/useLiveFeed'
+import useMatchMedia from '../../hooks/useMatchMedia'
 import useAnimationFrame from '../../hooks/useAnimationFrame'
+import useWindowBlur from '../../hooks/useWindowBlur'
+
+import limitRows, { SortOrder } from '../../utils/limitRows'
+import mapOrder from '../../utils/mapOrder'
+
+import styles from './styles.module.css'
 
 const numberFormat = new Intl.NumberFormat('en-US')
 const priceFormat = new Intl.NumberFormat('en-US', {
@@ -37,124 +43,67 @@ export type OrderBookProps = {
   productType: ProductType
 }
 
-export enum SortOder {
-  asc = 'asc',
-  desc = 'desc',
-}
-
-const limitedRows = (
-  items: Order[],
-  order = SortOder.asc
-): [OrderWithTotal[], number] => {
-  let prev = 0
-
-  return [
-    Array.from({ length: Math.min(20, items.length || 20) }).map((_, i) => {
-      const itemIndex = order === SortOder.asc ? i : items.length - i - 1
-
-      if (typeof items[itemIndex] !== 'undefined') {
-        const total = items[itemIndex][1] + prev
-        prev = total
-        return [items[itemIndex][0], items[itemIndex][1], total]
-      }
-
-      return [0, 0, 0]
-    }),
-    prev,
-  ]
-}
-
-const mapOrder = (
-  items: OrderWithTotal[],
-  highestTotal: number,
-  mapper: {
-    (
-      [price, size, total]: OrderWithTotal,
-      i: number,
-      depth: number
-    ): JSX.Element
-  }
-) =>
-  items.map((item, i) => {
-    return mapper(item, i, Math.round((item[2] / highestTotal) * 100))
-  })
-
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
-  const [reducerState, dispatch] = useReducer(reducer, initialState)
-  const [isInactive, setIsInactive] = useState<string | boolean>(false)
-  const [isSmallScreen, setIsSmallScreen] = useState(
-    window?.matchMedia('(max-width: 600px)').matches
-  )
-  const [state, setState] = useState(reducerState)
+  const [isInactiveText, setIsInactiveText] = useState<string | boolean>(false)
 
+  // useLiveFeed
+  const [reducerState, dispatch] = useReducer(reducer, initialState)
+  const handleLiveFeed = useCallback((data: OrderData) => {
+    const msg = mapMessageToOrderAction(data)
+    if (typeof msg !== 'undefined') dispatch(msg)
+  }, [])
+  const handleFeedError = useCallback(() => {
+    setIsInactiveText('Error connecting to feed. Click to retry.')
+  }, [])
+  const { close, subscribe } = useLiveFeed(handleLiveFeed, handleFeedError)
+
+  const handleClose = useCallback(() => {
+    setIsInactiveText(
+      'Updates were stopped due to inactivity. Click to reconnect.'
+    )
+    close()
+  }, [close])
+
+  const handleReconnect = useCallback(async () => {
+    await subscribe(productType)
+    setIsInactiveText(false)
+  }, [productType, subscribe])
+
+  // 1. Initial subscription and handles product type change
+  useEffect(() => {
+    subscribe(productType)
+    setIsInactiveText(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productType])
+
+  // Handles unmount/cleanup, close connection
+  useEffect(() => {
+    return () => {
+      close()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Handles window blur, disconnect ws to save resources
+  useWindowBlur(handleClose)
+
+  // Handles size change
+  const { isSmallScreen } = useMatchMedia('(max-width: 600px)')
+
+  // Handles animation frame
+  const [state, setState] = useState(reducerState)
   const ref = useRef(reducerState)
   ref.current = reducerState
   useAnimationFrame(() => {
     setState(ref.current)
   })
 
-  const handleLiveFeed = useCallback((data: OrderData) => {
-    const msg = mapMessageToOrderAction(data)
-    if (typeof msg !== 'undefined') dispatch(msg)
-  }, [])
-
-  const handleFeedError = useCallback(() => {
-    setIsInactive('Error connecting to feed. Click to retry.')
-  }, [])
-
-  const { close, subscribe } = useLiveFeed(handleLiveFeed, handleFeedError)
-
-  useEffect(() => {
-    subscribe(productType)
-    setIsInactive(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productType])
-
-  useEffect(() => {
-    return () => {
-      close()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useLayoutEffect(() => {
-    const handleClose = () => {
-      setIsInactive(
-        'Updates were stopped due to inactivity. Click to reconnect.'
-      )
-      close()
-    }
-    window.addEventListener('blur', handleClose)
-    return () => {
-      window.removeEventListener('blur', handleClose)
-    }
-  }, [close])
-
-  useEffect(() => {
-    const mediaQuery = window?.matchMedia('(max-width: 600px)')
-    const handleSmallScreenSchange = (e: any) => {
-      if (e.matches) {
-        setIsSmallScreen(true)
-      } else setIsSmallScreen(false)
-    }
-    mediaQuery.addEventListener('change', handleSmallScreenSchange)
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleSmallScreenSchange)
-    }
-  }, [])
-
-  const handleReconnect = useCallback(async () => {
-    await subscribe(productType)
-    setIsInactive(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productType, subscribe])
-
   const { spreadNumbers } = useMemo(() => {
     const spreadAmount =
         state.bids.length > 0 && state.asks.length > 0
           ? Math.abs(state.bids[state.bids.length - 1][0] - state.asks[0][0])
           : 0,
+      // FIXME check how percentage is calculated
       spreadPercentage =
         state.asks.length > 0 ? spreadAmount / state.asks[0][0] : 0,
       spreadNumbers = `${spreadFormat.format(
@@ -165,20 +114,20 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   }, [state.bids, state.asks])
 
   const [bids, bidsTotal] = useMemo(
-    () => limitedRows(state.bids, SortOder.desc),
+    () => limitRows(state.bids, SortOrder.desc),
     [state.bids]
   )
   const [asks, asksTotal] = useMemo(
-    () => limitedRows(state.asks, SortOder.asc),
+    () => limitRows(state.asks, SortOrder.asc),
     [state.asks]
   )
   const highestTotal = Math.max(bidsTotal, asksTotal)
 
   return (
     <section className={styles.orders}>
-      {isInactive && (
+      {isInactiveText && (
         <div className={styles.orders_overlay} onClick={handleReconnect}>
-          {isInactive}
+          {isInactiveText}
         </div>
       )}
       <p className={styles.spread}>
