@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useReducer,
   useState,
+  useMemo,
 } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -14,6 +15,7 @@ import reducer, { initialState } from '../../entities/Order/reducer'
 import { OrderData, ProductType } from '../../services/types'
 import mapMessageToOrderAction from '../../entities/Order/mapMessageToOrderAction'
 import { Order, OrderWithTotal } from '../../entities/Order/types'
+import useFPS from '../../hooks/useFPS'
 
 const numberFormat = new Intl.NumberFormat('en-US')
 const priceFormat = new Intl.NumberFormat('en-US', {
@@ -40,26 +42,40 @@ export enum SortOder {
 
 const limitedRows = (
   items: Order[],
-  mapper: {
-    ([price, size, total]: OrderWithTotal, i: number): JSX.Element
-  },
   order = SortOder.asc
-) => {
+): [OrderWithTotal[], number] => {
   let prev = 0
-  return Array.from({ length: Math.min(20, items.length || 20) }).map(
-    (_, i) => {
+
+  return [
+    Array.from({ length: Math.min(20, items.length || 20) }).map((_, i) => {
       const itemIndex = order === SortOder.asc ? i : items.length - i - 1
 
       if (typeof items[itemIndex] !== 'undefined') {
         const total = items[itemIndex][1] + prev
         prev = total
-        return mapper([items[itemIndex][0], items[itemIndex][1], total], i)
+        return [items[itemIndex][0], items[itemIndex][1], total]
       }
 
-      return mapper([0, 0, 0], i)
-    }
-  )
+      return [0, 0, 0]
+    }),
+    prev,
+  ]
 }
+
+const mapOrder = (
+  items: OrderWithTotal[],
+  highestTotal: number,
+  mapper: {
+    (
+      [price, size, total]: OrderWithTotal,
+      i: number,
+      depth: number
+    ): JSX.Element
+  }
+) =>
+  items.map((item, i) => {
+    return mapper(item, i, Math.round((item[2] / highestTotal) * 100))
+  })
 
 const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [state, dispatch] = useReducer(reducer, initialState)
@@ -67,6 +83,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const [isSmallScreen, setIsSmallScreen] = useState(
     window?.matchMedia('(max-width: 600px)').matches
   )
+  const { ms: throttleMS } = useFPS(60)
 
   const handleLiveFeed = useCallback((data: OrderData) => {
     const msg = mapMessageToOrderAction(data)
@@ -80,7 +97,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   const { close, subscribe } = useLiveFeed(handleLiveFeed, handleFeedError)
 
   useEffect(() => {
-    subscribe(productType, 18)
+    subscribe(productType, throttleMS)
     setIsInactive(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType])
@@ -103,7 +120,7 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
     return () => {
       window.removeEventListener('blur', handleClose)
     }
-  })
+  }, [close])
 
   useEffect(() => {
     const mediaQuery = window?.matchMedia('(max-width: 600px)')
@@ -120,8 +137,9 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
   }, [])
 
   const handleReconnect = useCallback(async () => {
-    await subscribe(productType, 18)
+    await subscribe(productType, throttleMS)
     setIsInactive(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productType, subscribe])
 
   const spreadAmount =
@@ -133,6 +151,16 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
     spreadNumbers = `${spreadFormat.format(
       spreadAmount
     )} (${percentageFormat.format(spreadPercentage)}%)`
+
+  const [bids, bidsTotal] = useMemo(
+    () => limitedRows(state.bids, SortOder.desc),
+    [state.bids]
+  )
+  const [asks, asksTotal] = useMemo(
+    () => limitedRows(state.asks, SortOder.asc),
+    [state.asks]
+  )
+  const highestTotal = Math.max(bidsTotal, asksTotal)
 
   return (
     <section className={styles.orders}>
@@ -150,29 +178,21 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
           <span className={styles.orders_headerItem}>Size</span>
           <span className={styles.orders_headerItem}>Total</span>
         </header>
-        {limitedRows(
-          state.bids,
-          ([price, size, total], index) => (
-            <div
-              key={`row-${index}`}
-              className={styles.order}
-              style={{
-                background: `linear-gradient(to ${
-                  isSmallScreen ? 'right' : 'left'
-                }, var(--buyChart) ${Math.round(
-                  (total / state.highestTotal) * 100
-                )}%, transparent ${Math.round(
-                  (total / state.highestTotal) * 100
-                )}%)`,
-              }}
-            >
-              <span className={styles.bid_price}>{n(price, true)}</span>
-              <span className={styles.order_size}>{n(size)}</span>
-              <span className={styles.order_total}>{n(total)}</span>
-            </div>
-          ),
-          SortOder.desc
-        )}
+        {mapOrder(bids, highestTotal, ([price, size, total], index, depth) => (
+          <div
+            key={`row-${index}`}
+            className={styles.order}
+            style={{
+              background: `linear-gradient(to ${
+                isSmallScreen ? 'right' : 'left'
+              }, var(--buyChart) ${depth}%, transparent ${depth}%)`,
+            }}
+          >
+            <span className={styles.bid_price}>{n(price, true)}</span>
+            <span className={styles.order_size}>{n(size)}</span>
+            <span className={styles.order_total}>{n(total)}</span>
+          </div>
+        ))}
       </div>
 
       <div className={styles.asks}>
@@ -181,26 +201,22 @@ const OrderBook: FC<OrderBookProps> = ({ productType }) => {
           <span className={styles.orders_headerItem}>Size</span>
           <span className={styles.orders_headerItem}>Total</span>
         </header>
-        {limitedRows(
-          state.asks,
-          ([price, size, total], index) => (
+        {mapOrder(
+          isSmallScreen ? asks.reverse() : asks,
+          highestTotal,
+          ([price, size, total], index, depth) => (
             <div
               key={`row-${index}`}
               className={styles.order}
               style={{
-                background: `linear-gradient(to right, var(--sellChart) ${Math.round(
-                  (total / state.highestTotal) * 100
-                )}%, transparent ${Math.round(
-                  (total / state.highestTotal) * 100
-                )}%)`,
+                background: `linear-gradient(to right, var(--sellChart) ${depth}%, transparent ${depth}%)`,
               }}
             >
               <span className={styles.ask_price}>{n(price, true)}</span>
               <span className={styles.order_size}>{n(size)}</span>
               <span className={styles.order_total}>{n(total)}</span>
             </div>
-          ),
-          isSmallScreen ? SortOder.desc : SortOder.asc
+          )
         )}
       </div>
     </section>

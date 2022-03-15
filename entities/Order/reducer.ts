@@ -7,7 +7,6 @@ import { Order } from './types'
 export type OrderReduceState = {
   bids: Order[]
   asks: Order[]
-  highestTotal: number
 }
 
 export enum OrderReduceActionType {
@@ -23,7 +22,6 @@ export type OrderReduceAction = {
 export const initialState = {
   bids: [],
   asks: [],
-  highestTotal: 0,
 }
 
 const replaceWithDelta = (acc: Order[], [price, deltaSize]: Order): Order[] => {
@@ -48,10 +46,6 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
       return {
         bids: bids.sort((a, b) => a[0] - b[0]),
         asks: asks.sort((a, b) => a[0] - b[0]),
-        highestTotal: Math.max(
-          bids.reduce((sum, item) => sum + item[1], 0),
-          asks.reduce((sum, item) => sum + item[1], 0)
-        ),
       }
     }
     case OrderReduceActionType.update: {
@@ -64,13 +58,10 @@ const reducer: Reducer<OrderReduceState, OrderReduceAction> = (
         .reduce(replaceWithDelta, state.asks as Order[])
         .filter(([, size]) => size > 0)
         .sort((a, b) => a[0] - b[0])
+
       return {
         bids: bidsWithDeltas,
         asks: asksWithDeltas,
-        highestTotal: Math.max(
-          bidsWithDeltas.reduce((sum, item) => sum + item[1], 0),
-          asksWithDeltas.reduce((sum, item) => sum + item[1], 0)
-        ),
       }
     }
     default:

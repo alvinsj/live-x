@@ -10,7 +10,6 @@ describe('reducer', () => {
     expect(reducer(initialState, {} as OrderReduceAction)).toEqual({
       bids: [],
       asks: [],
-      highestTotal: 0,
     })
   })
 
@@ -24,7 +23,6 @@ describe('reducer', () => {
       ).toEqual({
         bids: [[10, 10]],
         asks: [[1, 1]],
-        highestTotal: 10,
       })
     })
 
@@ -52,7 +50,6 @@ describe('reducer', () => {
           [0.2, 3],
           [1, 1],
         ],
-        highestTotal: 30,
       })
     })
   })
@@ -61,7 +58,7 @@ describe('reducer', () => {
     it('updates orders with delta', () => {
       expect(
         reducer(
-          { bids: [[10, 10]], asks: [[1, 1]], highestTotal: 10 },
+          { bids: [[10, 10]], asks: [[1, 1]] },
           {
             type: OrderReduceActionType.update,
             payload: { bids: [[10, 100]], asks: [[1, 10]] } as Snapshot,
@@ -70,14 +67,13 @@ describe('reducer', () => {
       ).toEqual({
         bids: [[10, 100]],
         asks: [[1, 10]],
-        highestTotal: 100,
       })
     })
 
     it('removes orders when size=0', () => {
       expect(
         reducer(
-          { bids: [[10, 10]], asks: [[1, 1]], highestTotal: 10 },
+          { bids: [[10, 10]], asks: [[1, 1]] },
           {
             type: OrderReduceActionType.update,
             payload: {
@@ -92,14 +88,13 @@ describe('reducer', () => {
       ).toEqual({
         bids: [[11, 11]],
         asks: [[1, 1]],
-        highestTotal: 11,
       })
     })
 
     it('sorts orders with delta', () => {
       expect(
         reducer(
-          { bids: [[10, 10]], asks: [[1, 1]], highestTotal: 10 },
+          { bids: [[10, 10]], asks: [[1, 1]] },
           {
             type: OrderReduceActionType.update,
             payload: {
@@ -118,7 +113,6 @@ describe('reducer', () => {
           [11, 11],
         ],
         asks: [[1, 1]],
-        highestTotal: 13,
       })
     })
   })

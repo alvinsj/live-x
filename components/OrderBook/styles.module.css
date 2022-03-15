@@ -15,7 +15,7 @@
 
 .orders_header,
 .order {
-  display: table-row;
+  display: flex;
 }
 
 .order_price,
@@ -46,8 +46,9 @@
   border: none;
   line-height: 1.5em;
   text-align: right;
-  padding: 5px 50px 0px 50px;
+  padding: 3px 3em 3px 0;
   box-sizing: border-box;
+  flex: 1;
 }
 
 .orders_headerItem {
@@ -55,9 +56,10 @@
   color: var(--primary01);
   border-bottom: 1px solid var(--primary02);
   text-align: right;
-  padding: 5px 50px 5px 50px;
+  padding: 5px 3em 5px 0;
   box-sizing: border-box;
   text-transform: uppercase;
+  flex: 1;
 }
 
 .asks {
