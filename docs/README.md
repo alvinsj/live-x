@@ -2,23 +2,22 @@
 
 ## File structure
 
-`pages/*`: entry pages
+Files are organized:
+- `pages/*`: entry pages
+- `styles/*`: styles 
+- `components/*`: react components
+- `hooks/*`: react hooks
+- `entities/*`: domain entities
+- `services/*`: API services, analytics, error reporting etc
+- `utils/*`: misc helpers
+- `workers/*`: web worker
 
-`styles/*`: styles 
+## CSS 
 
-`components/*`: react components
+CSS is organized with `BEM` methodology.
+In future, it can be improved with SASS adoption.
 
-`hooks/*`: react hooks
+## WebSocket on Web Worker
 
-`entities/*`: domain entities
-
-`services/*`: API services, analytics, error reporting etc
-
-`utils/*`: misc helpers
-
-`workers/*`: web worker
-
-
-
-
-
+With the help of Comlink library, WebSocket is handled in Web Worker thread. 
+In future, event handling for WebSocket can be also be improved using RxJS or similar. 
