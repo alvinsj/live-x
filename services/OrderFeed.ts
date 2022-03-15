@@ -10,8 +10,7 @@ export type WebSocketEvent = MessageEvent
 export type WebSocketError = Error
 
 const filterEvents = (msg: Message) => {
-  return msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_SNAPSHOT}` ||
-    msg?.feed === `${process.env.NEXT_PUBLIC_FEED_TYPE_DELTA}`
+  return msg?.feed === 'book_ui_1_snapshot' || msg?.feed === 'book_ui_1'
     ? msg
     : undefined
 }
