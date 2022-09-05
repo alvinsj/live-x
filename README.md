@@ -4,6 +4,8 @@ This repo shows:
 - Use of [comlink](https://github.com/GoogleChromeLabs/comlink) and web worker to offload Socket connection handling.
 - Use of [`requestAnimationFrame`](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) to manage `setState` (or batch update) within max FPS. 
 
+![live-x](https://user-images.githubusercontent.com/243186/188469993-56557e1b-a285-4af5-a6bc-44653e1b4a10.gif)
+
 ## Getting Started
 
 First, install the dependencies:
