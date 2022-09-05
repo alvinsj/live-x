@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# live-x 
+
+This repo shows:
+- Use of [comlink](https://github.com/GoogleChromeLabs/comlink) and web worker to offload Socket connection handling.
+- Use of [`requestAnimationFrame`](https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame) to manage `setState` (or batch update) within max FPS. 
 
 ## Getting Started
 
