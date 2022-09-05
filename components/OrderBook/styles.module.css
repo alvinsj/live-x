@@ -1,0 +1,131 @@
+.orders {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'spread spread'
+    'bids asks';
+}
+
+.asks,
+.bids {
+  display: table;
+}
+
+.orders_header,
+.order {
+  display: flex;
+}
+
+.order_price,
+.order_size,
+.order_total,
+.orders_headerItem {
+  display: table-cell;
+}
+
+.bids {
+  grid-area: bids;
+  direction: rtl;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.bid_price {
+  color: var(--buy00);
+}
+
+.order_price,
+.order_size,
+.order_total,
+.ask_price,
+.bid_price {
+  font-family: var(--fontFamilyNumber);
+  border: none;
+  line-height: 1.5em;
+  text-align: right;
+  padding: 3px 3em 3px 0;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.orders_headerItem {
+  border-top: 1px solid var(--primary01);
+  color: var(--primary01);
+  border-bottom: 1px solid var(--primary02);
+  text-align: right;
+  padding: 5px 3em 5px 0;
+  box-sizing: border-box;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.asks {
+  grid-area: asks;
+  direction: ltr;
+  table-layout: fixed;
+  width: 100%;
+  height: 0;
+}
+
+.ask_price {
+  color: var(--sell00);
+}
+
+.order {
+  text-align: right;
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+}
+
+.spread {
+  grid-area: spread;
+  text-align: center;
+  color: var(--primary01);
+}
+
+.spread_number {
+  font-family: var(--fontFamilyNumber);
+}
+
+.orders_overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--overlay);
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .orders {
+    display: grid;
+    grid-template-rows: auto;
+    grid-template-columns: auto;
+    grid-template-areas:
+      'title'
+      'asks'
+      'spread'
+      'bids';
+  }
+  .bids {
+    grid-area: bids;
+    direction: ltr;
+  }
+
+  .bids .orders_header {
+    display: none;
+  }
+
+  .spread {
+    grid-area: spread;
+    display: block;
+  }
+}
